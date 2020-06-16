@@ -19,6 +19,9 @@
 
     <script src="simplepeer.min.js"></script> 
     <script>
+      document.getElementById("send-1").addEventListener("click", send1);
+      document.getElementById("send-2").addEventListener("click", send2);
+      
       const p = new SimplePeer({
         initiator: location.hash === '#1',
         trickle: false
