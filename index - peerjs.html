@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body>
+
+<h4 id="my-peer-id"></h4>
+
+<span>ID of peer to connect to</span>
+<input type="text" id="connect-to-id" name="ID of peer to connect to"/>
+<input type="button" id="connect-now" name="Connect" value="Connect" />
+
+
+<h4 id="connection-status"></h4>
+
+<input type="button" id="send-1" name="Send 1" value="Send 1" />
+<input type="button" id="send-2" name="Send 2" value="Send 2" />
+
+<h4 id="received"></h4>
+
+<script src="https://unpkg.com/peerjs@1.2.0/dist/peerjs.min.js"></script>
+<script>
+  document.getElementById("connect-now").addEventListener("click", connectNow);
+  document.getElementById("send-1").addEventListener("click", send1);
+  document.getElementById("send-2").addEventListener("click", send2);
+  
+  var conn;
+  
+  
+  document.getElementById("my-peer-id").innerHTML = "Getting my peer ID...";
+  
+  var peer = new Peer();
+
+  peer.on('open', function(id) {
+    // console.log('My peer ID is: ' + id);
+    
+    document.getElementById("my-peer-id").innerHTML = "My peer ID is: " + id;
+  });
+
+
+  peer.on('connection', function(a_conn) {
+    conn = a_conn;
+    document.getElementById("connection-status").innerHTML = "Connected to " + conn.id;
+  
+    conn.on('data', function(data){
+      document.getElementById("received").innerHTML = data;
+    });
+  });
+
+  function connectNow() {
+    var connectToId = document.getElementById("connect-to-id").value;
+    document.getElementById("connection-status").innerHTML = 
+      "Connecting to " + connectToId + "...";
+      
+    conn = peer.connect('another-peers-id');
+    
+    // on open will be launched when you successfully connect to PeerServer
+    conn.on('open', function(){
+      // here you have conn.id
+      document.getElementById("connection-status").innerHTML = "Connected to " + conn.id;
+      conn.send('Hi!');
+    });
+  }
+  function send1() {
+    conn.send('1');
+  }
+  function send2() {
+    conn.send('2');
+  }
+</script>
+
+<!--
+
+
+
+
+    var 
+-->
+
+</body>
+</html>
+
