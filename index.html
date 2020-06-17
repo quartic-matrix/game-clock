@@ -17,11 +17,12 @@
     <input type="button" id="send-2" name="Send 2" value="Send 2" />
     <h4 id="received"></h4>
 
-    <script src="simplepeer.min.js"></script> 
+    <script src="deploy/simplepeer.min.js"></script> 
+    <script src="deploy/webrtc-swarm.js"></script> 
     <script>
       document.getElementById("send-1").addEventListener("click", send1);
       document.getElementById("send-2").addEventListener("click", send2);
-      
+
       const p = new SimplePeer({
         initiator: location.hash === '#1',
         trickle: false
