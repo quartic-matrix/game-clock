@@ -1,0 +1,59 @@
+<html>
+  <body>
+    <style>
+      #outgoing {
+        width: 600px;
+        word-wrap: break-word;
+        white-space: normal;
+      }
+    </style> 
+    <form>
+      <textarea id="incoming"></textarea>
+      <button type="submit">submit</button>
+    </form>
+    <pre id="outgoing"></pre>
+
+    <input type="button" id="send-1" name="Send 1" value="Send 1" />
+    <input type="button" id="send-2" name="Send 2" value="Send 2" />
+    <h4 id="received"></h4>
+
+    <script src="deploy/simplepeer.min.js"></script> 
+    <script>
+      document.getElementById("send-1").addEventListener("click", send1);
+      document.getElementById("send-2").addEventListener("click", send2);
+
+      const p = new SimplePeer({
+        initiator: location.hash === '#1',
+        trickle: false
+      })
+ 
+      p.on('error', err => console.log('error', err))
+ 
+      p.on('signal', data => {
+        console.log('SIGNAL', JSON.stringify(data))
+        document.querySelector('#outgoing').textContent = JSON.stringify(data)
+      })
+ 
+      document.querySelector('form').addEventListener('submit', ev => {
+        ev.preventDefault()
+        p.signal(JSON.parse(document.querySelector('#incoming').value))
+      })
+ 
+      p.on('connect', () => {
+        console.log('CONNECT')
+        p.send('whatever' + Math.random())
+      })
+ 
+      p.on('data', data => {
+        document.getElementById("received").innerHTML = data;
+      })
+          
+      function send1() {
+        p.send('1');
+      }
+      function send2() {
+        p.send('2');
+      }
+    </script> 
+  </body>
+</html>
