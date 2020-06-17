@@ -5,13 +5,12 @@
     <input type="button" id="send-2" name="Send 2" value="Send 2" />
     <h4 id="received"></h4>
 
-    <script src="deploy/simplepeer.min.js"></script> 
     <script src="deploy/webrtc-swarm.js"></script> 
     <script>
       document.getElementById("send-1").addEventListener("click", send1);
       document.getElementById("send-2").addEventListener("click", send2);
 
-      var sw = WebRTCSwarm('swarm-example', ['https://quartic-matrix-signalhub.herokuapp.com/'])
+      var sw = new WebRTCSwarm('swarm-example', ['https://quartic-matrix-signalhub.herokuapp.com/'])
 
       if (!sw.WEBRTC_SUPPORT) {
 
@@ -38,10 +37,17 @@
       })
           
       function send1() {
-        p.send('1');
+        broadcast('1');
       }
+
       function send2() {
-        p.send('2');
+        broadcast('2');
+      }
+
+      function broadcast(data) {
+        sw.peers.forEach(function (peer) {
+          peer.send(data);
+        });
       }
     </script> 
   </body>
