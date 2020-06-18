@@ -43,24 +43,59 @@
 
     <script src="deploy/webrtc-swarm.js"></script> 
     <script>
-      setInterval(updateActiveTimer, 1000);
+      var sw;
+      var activeTimer;
+
+      if (true) {
+        sw = new WebRTCSwarm('swarm-example', ['https://quartic-matrix-signalhub.herokuapp.com/'])
+        var isMyFirstConnection = true;
+
+        if (!sw.WEBRTC_SUPPORT) {
+
+        }
+
+        sw.on('connect', function (peer, id) {
+          console.log('connected to a new peer:', id)
+          console.log('total peers:', sw.peers.length)
+
+          peer.on('error', function (err) { 
+            console.log('error', err); 
+          })
+          
+          peer.on('data', receive);
+
+          if (isMyFirstConnection) {
+            isMyFirstConnection = false;
+            if (!peer.initiator) {
+              var data = {type:"requestUpdate"};
+              var json = JSON.stringify(data);
+              peer.send(json);
+            }
+          }
+        })
+
+        sw.on('disconnect', function (peer, id) {
+          console.log('disconnected from a peer:', id)
+          console.log('total peers:', sw.peers.length)
+        })
+      }
 
       document.addEventListener("onload",init(),false);
 
-
       function init() {
-        document.getElementById("down-time-time").innerHTML = "00:12:34";
-        
         let colours = generateHslaColors(70, 50, 1.0, 6);
 
         for (var i = 0; i < colours.length; ++i) {
           cloneButton(i, colours[i]);
         };
 
-        setupButton(document.getElementById("down-time-button"));
+        var downTimeButton = document.getElementById("down-time-button");
+        setupButton(downTimeButton);
+        switchTo(downTimeButton);
+
+        setInterval(updateActiveTimer, 1000);
       }
 
-      var activeTimer = document.getElementById("down-time-time");
       function updateActiveTimer() {
         if (!activeTimer) {
           return;
@@ -109,89 +144,59 @@
         button.querySelector(".button-label").innerHTML = "Button " + i;
       }
 
-      if (true) {
-        var sw = new WebRTCSwarm('swarm-example', ['https://quartic-matrix-signalhub.herokuapp.com/'])
-        var isMyFirstConnection = true;
+      function switchTo(button) {
+        var timer = button.querySelector(".timer")
+        var data = {type:"update", activeTimerId:timer.id};
 
-        if (!sw.WEBRTC_SUPPORT) {
+        pushTimerTimes(data);
+        
+        broadcast(data);
+      }
 
-        }
+      function pushTimerTimes(data) {
+        data.timerTimes = [];
+        return document.querySelectorAll(".timer").forEach(function (timer) {
+          var timerTime = {id:timer.id, time:timer.time};
+          data.timerTimes.push(timerTime);
+        });
+      }
 
-        sw.on('connect', function (peer, id) {
-          console.log('connected to a new peer:', id)
-          console.log('total peers:', sw.peers.length)
+      function broadcast(data) {
+        var json = JSON.stringify(data);
+        receive(json);
+        sw.peers.forEach(function (peer) {
+          peer.send(json);
+        });
+      }
 
-          peer.on('error', function (err) { 
-            console.log('error', err); 
-          })
-          
-          peer.on('data', receive);
-
-          if (isMyFirstConnection) {
-            isMyFirstConnection = false;
-            if (!peer.initiator) {
-              var data = {type:"requestUpdate"};
-              var json = JSON.stringify(data);
-              peer.send(json);
-            }
+      function receive(json) {
+        document.getElementById("received").innerHTML = json;
+        var data = JSON.parse(json);
+        switch (data.type) {
+          case "requestUpdate": {
+            var dataToSend = {type:"update", activeTimerId:activeTimer.id};
+            pushTimerTimes(dataToSend);
+            broadcast(dataToSend);
+            break;
           }
-        })
-
-        sw.on('disconnect', function (peer, id) {
-          console.log('disconnected from a peer:', id)
-          console.log('total peers:', sw.peers.length)
-        })
-
-        function switchTo(button) {
-          var timer = button.querySelector(".timer")
-          var data = {type:"update", activeTimerId:timer.id};
-
-          pushTimerTimes(data);
-          
-          broadcast(data);
-        }
-
-        function pushTimerTimes(data) {
-          data.timerTimes = [];
-          return document.querySelectorAll(".timer").forEach(function (timer) {
-            var timerTime = {id:timer.id, time:timer.time};
-            data.timerTimes.push(timerTime);
-          });
-        }
-
-        function broadcast(data) {
-          var json = JSON.stringify(data);
-          receive(json);
-          sw.peers.forEach(function (peer) {
-            peer.send(json);
-          });
-        }
-
-        function receive(json) {
-          document.getElementById("received").innerHTML = json;
-          var data = JSON.parse(json);
-          switch (data.type) {
-            case "requestUpdate": {
-              var dataToSend = {type:"update", activeTimerId:activeTimer.id};
-              pushTimerTimes(dataToSend);
-              broadcast(dataToSend);
-              break;
-            }
-            case "update": {
-              doUpdate(data);
-              break;
-            }
+          case "update": {
+            doUpdate(data);
+            break;
           }
         }
+      }
 
-        function doUpdate(data) {
-          activeTimer = document.getElementById(data.activeTimerId);
-          data.timerTimes.forEach(function (timerTime) {
-            timer = document.getElementById(timerTime.id);
-            timer.time = timerTime.time;
-            timer.innerHTML = ":" + timer.time;
-          }); 
+      function doUpdate(data) {
+        if (activeTimer) {
+          activeTimer.parentElement.parentElement.querySelector(".button-rect").style.stroke = "#5c5c5c";
         }
+        activeTimer = document.getElementById(data.activeTimerId);
+        activeTimer.parentElement.parentElement.querySelector(".button-rect").style.stroke = "#aa0000";
+        data.timerTimes.forEach(function (timerTime) {
+          timer = document.getElementById(timerTime.id);
+          timer.time = timerTime.time;
+          timer.innerHTML = ":" + timer.time;
+        }); 
       }
     </script> 
   </body>
