@@ -1,9 +1,7 @@
 <html>
   <body>
 
-    <input type="button" id="send-1" name="Send 1" value="Send 1" />
-    <input type="button" id="send-2" name="Send 2" value="Send 2" />
-    <h4 id="received"></h4>
+    <pre id="received"></pre>
 
     <svg id="svg-area" width="100" height="1000" xmlns="http://www.w3.org/2000/svg">
       <g
@@ -74,15 +72,13 @@
       function updateIds(element, i) {
         element.id = element.id.replace("down-time", "my-"+i);
         var children = [].slice.call(element.children);
-        children.forEach(updateIds);
+        children.forEach(function (child) { updateIds(child, i); });
       }
 
       function setupButton(button) {
         var timer = button.querySelector(".timer")
         timer.time = 0;
-        button.addEventListener("click", function() { 
-          activeTimer = timer;
-        } );
+        button.addEventListener("click", function() { switchTo(button); });
       }
 
       function cloneButton(i, colour) {
@@ -114,10 +110,8 @@
       }
 
       if (true) {
-        document.getElementById("send-1").addEventListener("click", send1);
-        document.getElementById("send-2").addEventListener("click", send2);
-
         var sw = new WebRTCSwarm('swarm-example', ['https://quartic-matrix-signalhub.herokuapp.com/'])
+        var isMyFirstConnection = true;
 
         if (!sw.WEBRTC_SUPPORT) {
 
@@ -131,30 +125,72 @@
             console.log('error', err); 
           })
           
-          peer.on('data', function (data) {
-            document.getElementById("received").innerHTML = data;
-          })
-          
-          peer.send('whatever' + Math.random())
+          peer.on('data', receive);
+
+          if (isMyFirstConnection) {
+            isMyFirstConnection = false;
+            if (!peer.initiator) {
+              var data = {type:"requestUpdate"};
+              var json = JSON.stringify(data);
+              peer.send(json);
+            }
+          }
         })
 
         sw.on('disconnect', function (peer, id) {
           console.log('disconnected from a peer:', id)
           console.log('total peers:', sw.peers.length)
         })
-      
-        function send1() {
-          broadcast('1');
+
+        function switchTo(button) {
+          var timer = button.querySelector(".timer")
+          var data = {type:"update", activeTimerId:timer.id};
+
+          pushTimerTimes(data);
+          
+          broadcast(data);
         }
 
-        function send2() {
-          broadcast('2');
+        function pushTimerTimes(data) {
+          data.timerTimes = [];
+          return document.querySelectorAll(".timer").forEach(function (timer) {
+            var timerTime = {id:timer.id, time:timer.time};
+            data.timerTimes.push(timerTime);
+          });
         }
 
         function broadcast(data) {
+          var json = JSON.stringify(data);
+          receive(json);
           sw.peers.forEach(function (peer) {
-            peer.send(data);
+            peer.send(json);
           });
+        }
+
+        function receive(json) {
+          document.getElementById("received").innerHTML = json;
+          var data = JSON.parse(json);
+          switch (data.type) {
+            case "requestUpdate": {
+              var dataToSend = {type:"update", activeTimerId:activeTimer.id};
+              pushTimerTimes(dataToSend);
+              broadcast(dataToSend);
+              break;
+            }
+            case "update": {
+              doUpdate(data);
+              break;
+            }
+          }
+        }
+
+        function doUpdate(data) {
+          activeTimer = document.getElementById(data.activeTimerId);
+          data.timerTimes.forEach(function (timerTime) {
+            timer = document.getElementById(timerTime.id);
+            timer.time = timerTime.time;
+            timer.innerHTML = ":" + timer.time;
+          }); 
         }
       }
     </script> 
