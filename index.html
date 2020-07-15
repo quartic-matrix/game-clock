@@ -184,6 +184,8 @@
             
             label.innerHTML = textbox.value;
             div.parentNode.removeChild(div);
+
+            broadcastFullUpdate(activeTimer);
           }
         });
 
@@ -198,7 +200,8 @@
       function switchTo(button) {
         var timer = button.querySelector(".timer")
         var data = {type:"update", activeTimerId:timer.id};
-        broadcastUpdateWith(data);
+        pushTimerTimes(data);
+        broadcast(data);
       }
 
       function pushTimerTimes(data) {
@@ -225,10 +228,11 @@
         });
       }
 
-      function broadcastUpdateWith(data) {
-        pushTimerTimes(dataToSend);
-        pushButtonNames(dataToSend);
-        broadcast(dataToSend);
+      function broadcastFullUpdate(activateTimer) {
+        var data = {type:"update", activeTimerId:activateTimer.id};
+        pushTimerTimes(data);
+        pushButtonNames(data);
+        broadcast(data);
       }
 
       function receive(json) {
@@ -236,8 +240,7 @@
         var data = JSON.parse(json);
         switch (data.type) {
           case "requestUpdate": {
-            var dataToSend = {type:"update", activeTimerId:activeTimer.id};
-            broadcastUpdateWith(dataToSend);
+            broadcastFullUpdate(activeTimer);
             break;
           }
           case "update": {
@@ -258,10 +261,12 @@
           timer.time = timerTime.time;
           timer.innerHTML = formatTime(timer.time);
         }); 
-        data.buttonNames.forEach(function (buttonName) {
-          label = document.getElementById(buttonName.id);
-          label.innerHTML = buttonName.name;
-        }); 
+        if (data.buttonNames) {
+          data.buttonNames.forEach(function (buttonName) {
+            label = document.getElementById(buttonName.id);
+            label.innerHTML = buttonName.name;
+          }); 
+        }
       }
 
       function formatTime(timeInMs) {
