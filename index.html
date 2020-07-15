@@ -1,11 +1,9 @@
 <html>
   <body>
 
-    <pre id="received"></pre>
-
     <div id="buttons">
-      <div id="down-time-button" style="position: absolute; top: 0; width:100; height:100;">
-        <svg id="svg-area" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: 0;">
+      <div id="down-time-button" style="position: relative; top: 0; width:84; height:84; padding:8; ">
+        <svg id="svg-area" xmlns="http://www.w3.org/2000/svg" style="position: relative; width:84; height:84;">
           <g>
             <rect
                 id="down-time-rect"
@@ -134,7 +132,7 @@
         var newButton = document.getElementById("down-time-button").cloneNode(true);
         updateIds(newButton, i);
 
-        var topPos = (100 + i*100);
+        var topPos = 0;// (100 + i*100);
         //var move = "translate("+0+","+ (100+i*100) +")";
         //newButton.setAttribute("transform", move);
         newButton.style.top = topPos;
@@ -162,11 +160,11 @@
 
       function rename(button) {
         var div = document.createElement( "div" ); 
-        div.style.position = "absolute";
+        div.style.position = "relative";
 
         var textbox = document.createElement( "input" ); 
-        textbox.setAttribute( "type" , "text" );
-        textbox.setAttribute("name", "Test Name");
+        textbox.setAttribute("type" , "text" );
+        textbox.setAttribute("maxlength", 12);
 
         var label = button.querySelector(".button-label");
         var rect = label.getBoundingClientRect();
@@ -190,11 +188,13 @@
         });
 
         var leftPos = (84 - labelWidth)/2;
-        div.style.top = 14;
+        div.style.top = 14 - 84;
         div.style.left = leftPos;
 
         div.appendChild(textbox);
         button.appendChild(div);
+        textbox.focus();
+        textbox.select();
       }
 
       function switchTo(button) {
@@ -236,7 +236,6 @@
       }
 
       function receive(json) {
-        document.getElementById("received").innerHTML = json;
         var data = JSON.parse(json);
         switch (data.type) {
           case "requestUpdate": {
